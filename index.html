@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Jarvis</title>
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#070b14">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <h1>JARVIS</h1>
+      <div class="top-actions">
+        <label class="switch" title="After Jarvis answers, keep listening for your next sentence">
+          <input type="checkbox" id="convo"> <span>Conversation mode</span>
+        </label>
+        <button type="button" id="calBtn" class="ghost">Calendar</button>
+        <button type="button" id="dashBtn" class="ghost">Dashboard</button>
+        <button type="button" id="settingsBtn" class="ghost">Settings</button>
+      </div>
+    </header>
+
+    <button type="button" id="dStrip" class="dstrip" title="Open dashboard" aria-label="Open dashboard"><span id="sClock">--:--</span><span id="sWx"></span></button>
+
+
+    <section class="stage">
+      <button type="button" id="orb" class="orb" data-state="idle" aria-label="Talk to Jarvis">
+        <span class="ring r1"></span><span class="ring r2"></span>
+        <svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true">
+          <path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12h-2Z"/>
+        </svg>
+      </button>
+      <p id="status" class="status" aria-live="polite">Tap the orb and speak</p>
+    </section>
+
+    <section id="log" class="log" aria-live="polite"></section>
+
+    <form id="form" class="composer" autocomplete="off">
+      <label class="attach ghost" title="Attach a photo or file" aria-label="Attach a photo or file">📎<input id="file" type="file" accept="image/*,.txt,.md,.csv" hidden></label>
+      <input id="input" type="text" placeholder="Or type here…" aria-label="Message">
+      <button type="submit" id="send">Send</button>
+    </form>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settingsForm">
+      <h2>Settings</h2>
+
+      <div hidden>
+      <div id="keyBlock">
+      <label>Gemini API key
+        <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
+      </label>
+      <label class="inline"><input type="checkbox" id="remember"> Remember the key on this device</label>
+      <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+        The key is stored only in this browser and sent only to Google. It is never uploaded to GitHub.</p>
+      </div>
+      <div id="codeBlock" hidden>
+        <label>Access code (only if you set one on your proxy)
+          <input id="accessCode" type="password" autocomplete="off" spellcheck="false">
+        </label>
+        <label class="inline"><input type="checkbox" id="rememberCode"> Remember the code on this device</label>
+        <p class="hint">This site uses your private proxy, so no API key is needed here.</p>
+      </div>
+
+      <label>Model
+        <input id="model" type="text" spellcheck="false" placeholder="gemini-3.8-flash">
+      </label>
+      </div>
+      <label>Your name (optional)
+        <input id="userName" type="text" autocomplete="off">
+      </label>
+      <label>How should Jarvis address you? (sir, madam, Mr Smith…)
+        <input id="address" type="text" autocomplete="off" placeholder="sir">
+      </label>
+      <div hidden><label class="inline"><input type="checkbox" id="geminiChat"></label></div>
+
+      <h3>Memory</h3>
+      <label class="inline"><input type="checkbox" id="memOn"> Remember things about me and our chat between visits</label>
+      <ul id="memList" class="memlist"></ul>
+      <div class="row"><button type="button" id="memClear" class="danger">Forget everything</button></div>
+      <p class="hint">Stored only in this browser. Tell Jarvis things like "my name is…", "I live in…", "I like…" or "remember that I prefer short answers". It won't store passwords, health, money or other sensitive details. Ask "what do you know about me?" or say "forget…" any time.</p>
+
+      <h3>Online brain (GitHub Models)</h3>
+      <p class="hint">Makes Jarvis much smarter: real analysis, open questions and photo interpretation. It is hosted by GitHub (free tier, with limits). Create a fine-grained personal access token with the <em>Models (read)</em> permission and paste it here. It stays only in this browser: never put it in your repository.</p>
+      <label>GitHub token
+        <input id="ghToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+      </label>
+      <label>Model
+        <input id="ghModel" type="text" spellcheck="false" placeholder="openai/gpt-4o-mini">
+      </label>
+      <div class="row"><button type="button" id="ghSave" class="ghost">Save and test</button><button type="button" id="ghRemove" class="ghost">Remove token</button></div>
+      <p class="hint" id="ghStatus"></p>
+
+      <h3>Local AI</h3>
+      <p class="hint"><strong>Always on.</strong> Jarvis runs a small language model inside your browser: no account, no key, no cloud. It downloads once, then works offline. Until it is ready, the built-in brain answers instantly.</p>
+      <p class="hint" id="localAiStatus"></p>
+      <div class="row"><button type="button" id="localAiLoad" class="ghost">Retry loading</button></div>
+      <div hidden><input type="checkbox" id="localAi" checked><p id="localAiRec"></p><input id="localModel" type="text"><button type="button" id="localAiUnload"></button><button type="button" id="localAiDelete"></button></div>
+
+      <h3>Voice</h3>
+      <label>Language (speech recognition and voice)
+        <select id="lang"></select>
+      </label>
+      <label>Jarvis voice
+        <select id="voice"></select>
+      </label>
+      <label>Speaking speed <output id="rateOut">1.0</output>
+        <input id="rate" type="range" min="0.7" max="1.5" step="0.1" value="1">
+      </label>
+      <label class="inline"><input type="checkbox" id="speak"> Speak answers aloud</label>
+      <button type="button" id="testVoice" class="ghost">Test voice</button>
+
+      <h3>Data</h3>
+      <div class="row">
+        <button type="button" id="exportBtn" class="ghost">Download notes</button>
+        <button type="button" id="clearBtn" class="ghost">Clear chat</button>
+        <button type="button" id="forgetBtn" class="danger">Forget saved key/code</button>
+      </div>
+
+      <div class="row end">
+        <button type="submit" id="saveBtn" value="save">Save</button>
+        <button type="submit" id="closeBtn" class="ghost" value="close">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dashDlg">
+    <section id="dash" class="dash" aria-label="Dashboard">
+      <article class="card"><div id="dClock" class="big">--:--</div><div id="dDate" class="sub"></div></article>
+      <article class="card"><div class="row1"><b id="dPlace">—</b><button type="button" id="dGeo" class="ghost sm" title="Use my location" aria-label="Use my location">📍</button></div>
+        <div id="dWx" class="sub">…</div>
+        <form id="dCityForm" autocomplete="off"><input id="dCity" type="text" placeholder="Change city…" aria-label="City"></form></article>
+      <article class="card news"><div class="row1"><b>News</b><small id="dNewsMeta" class="sub"></small><button type="button" id="dNewsReload" class="ghost sm" title="Reload news" aria-label="Reload news">↻</button></div><ul id="dNews"></ul></article>
+    </section>
+    <div class="row end"><button type="button" id="dashClose" class="ghost">Close</button></div>
+  </dialog>
+
+  <dialog id="cal">
+    <div class="row1"><button type="button" id="calPrev" class="ghost sm" aria-label="Previous month">‹</button><b id="calTitle"></b><button type="button" id="calNext" class="ghost sm" aria-label="Next month">›</button></div>
+    <div id="calGrid" class="calgrid"></div>
+    <h3 id="calDay"></h3>
+    <ul id="calList" class="memlist"></ul>
+    <form id="calForm" class="calform" autocomplete="off">
+      <select id="calKind" aria-label="Type"><option value="appt">📅 Appointment</option><option value="note">📝 Note</option><option value="rem">⏰ Reminder</option></select>
+      <input id="calTime" type="time" value="09:00" aria-label="Time">
+      <input id="calText" type="text" placeholder="What?" aria-label="Description" required>
+      <button type="submit">Add</button>
+    </form>
+    <div class="row end"><button type="button" id="calClose" class="ghost">Close</button></div>
+  </dialog>
+
+  <script defer src="config.js"></script>
+  <script defer src="ghmodels.js"></script>
+  <script defer src="jarvis-core.js"></script>
+  <script defer src="offline.js"></script>
+  <script defer src="chat.js"></script>
+  <script defer src="memory.js"></script>
+  <script defer src="web.js"></script>
+  <script defer src="localai.js"></script>
+  <script defer src="dash.js"></script>
+  <script defer src="brain.js"></script>
+  <script defer src="assistant.js"></script>
+  <script defer src="calendar.js"></script>
+  <script defer src="photo.js"></script>
+  <script defer src="analysis.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="neural.js"></script>
+</body>
+</html>
